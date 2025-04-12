@@ -15,7 +15,11 @@
       <div style="margin-top: 5px">现在是2025年4月1日晚上10点26分</div>
     </div>
     <div class="right-card">
-    <router-view/>
+    <router-view v-slot="{ Component }">
+      <transition name="el-fade-in-linear" mode="out-in">
+        <component :is="Component"/>
+      </transition>
+    </router-view>
 <!--      路由-->
     </div>
   </div>

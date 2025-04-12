@@ -48,6 +48,7 @@ public class  AccountServiceImpl extends ServiceImpl<AccountMapper, Account>impl
  public  String registerEmailAccount(EmailRegisterVO VO) {
         String email=VO.getEmail();
         String username=VO.getUsername();
+        //这个key是从用邮箱进行注册时，存在redis里面的验证码
         String key=Const.VERIFY_EMAIL_LIMIT+email;
         String code= stringRedisTemplate.opsForValue().get(key);
         if(code==null){
