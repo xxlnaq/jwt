@@ -24,10 +24,10 @@ public record RestBean<T>(int code, T data, String message) {
     //为什么不能去掉 <T>：
     //success 是一个静态方法，而静态方法不能直接使用类的泛型参数 T（因为静态方法属于类本身，而不是类的实例）。
     //因此，必须在方法签名中单独声明 <T>，表示这是一个泛型方法。
-    public  static <T> RestBean<T> success(T data){
-        return new RestBean<>(200,data,"请求成功");//若变为<T> 可以运行，但 <T> 是多余的
-    }
-    public  static <T> RestBean<T> success(){
+        public  static <T> RestBean<T> success(T data){
+            return new RestBean<>(200,data,"请求成功");//若变为<T> 可以运行，但 <T> 是多余的
+        }
+        public  static <T> RestBean<T> success(){
         return success(null);//这里实际上调用了success(T data)方法
     }
     public  static <T> RestBean<T> unauthorized(String message){

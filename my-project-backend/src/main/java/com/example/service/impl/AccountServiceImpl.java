@@ -5,7 +5,9 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.Utils.Const;
 import com.example.Utils.FlowUtils;
 import com.example.entity.dto.Account;
+import com.example.entity.vo.request.ConfirmResetVO;
 import com.example.entity.vo.request.EmailRegisterVO;
+import com.example.entity.vo.request.EmailResetVO;
 import com.example.mapper.AccountMapper;
 import com.example.service.AccountService;
 import jakarta.annotation.Resource;
@@ -45,6 +47,12 @@ public class  AccountServiceImpl extends ServiceImpl<AccountMapper, Account>impl
                 .roles(account.getRole())
                 .build();
     }
+
+    /**
+     * 注册
+     * @param VO
+     * @return
+     */
  public  String registerEmailAccount(EmailRegisterVO VO) {
         String email=VO.getEmail();
         String username=VO.getUsername();
@@ -70,6 +78,37 @@ public class  AccountServiceImpl extends ServiceImpl<AccountMapper, Account>impl
        }
     }
 
+    /**
+     * 检查指定邮箱的验证码是否正确
+     * @param vo
+     * @return
+     */
+    @Override
+    public String resetConfirm(ConfirmResetVO vo) {
+        String email=vo.getEmail();
+        String code =stringRedisTemplate.opsForValue().get(Const.VERIFY_EMAIL_LIMIT+email);
+        if(code==null) return "请先获取验证码";
+        if(!code.equals(vo.getCode())) {
+            return "验证码错误，请重新输入验证码";
+        }
+        return null;
+    }
+
+    @Override
+    public String resetEmailAccountPassword(EmailResetVO vo) {
+        String email=vo.getEmail();
+      String  verify= this.resetConfirm(new ConfirmResetVO(email, vo.getCode()));
+      if (verify!=null) return verify;
+        //若用户输入的验证码穿入错误，会直接返回resetConfirm中的返回信息
+        //并且这个方法结束
+      String password = passwordEncoder.encode(vo.getPassword());
+      boolean update = this.update().eq("email",email).set("password",password).update();
+      if (update) {
+          stringRedisTemplate.delete(Const.VERIFY_EMAIL_LIMIT+email);
+      }
+        return null;
+    }
+
     @Override
     public Account findAccountByNameOrEmail(String text) {
         return  this.query()
@@ -85,6 +124,13 @@ public class  AccountServiceImpl extends ServiceImpl<AccountMapper, Account>impl
         return this.baseMapper.exists(Wrappers.<Account>query().eq("username",username));
     }
 
+    /**发送验证码的实现方法
+     * 验证码请求接口对应的实现方法，将验证码存在redis中
+     * @param type
+     * @param email
+     * @param ip
+     * @return
+     */
     @Override
     public String registerEmailVerificationCode(String type, String email, String ip) {
         //不同IP的intern()结果不同，所以每个IP有自己的锁
